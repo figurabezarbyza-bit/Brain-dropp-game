@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Brain Drop</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101323;color:white;font-family:Arial,sans-serif;padding:18px; padding-bottom:35px}
+header{text-align:center;padding:14px}
+h1{font-size:32px;margin:5px;color:#72e5ff;text-shadow:0 0 18px #168cff}
+.sub{color:#a6b4d7}
+.panel{background:linear-gradient(145deg,#242d4d,#171b30);border:1px solid #394b73;border-radius:20px;padding:18px;margin:14px 0}
+.coins{font-size:23px;text-align:center;color:#ffdf65;font-weight:bold}
+.arena{text-align:center;padding:25px 10px}
+.chest{font-size:95px;filter:drop-shadow(0 0 15px #438cff)}
+button{border:0;border-radius:14px;padding:15px;width:100%;font-size:17px;font-weight:bold;color:#101323;background:linear-gradient(90deg,#72e5ff,#9e91ff);margin-top:10px}
+button:active{transform:scale(.98)}
+h2{font-size:19px;margin-top:0}
+.item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:#ffffff0c;border-radius:12px;margin:8px 0}
+.small{font-size:13px;color:#a6b4d7}
+.notice{text-align:center;color:#a6b4d7;font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<header>
+<h1>🧠 BRAIN DROP</h1>
+<div class="sub">Открывай дропы. Собирай коллекцию!</div>
+</header>
+
+<div class="panel coins">🪙 <span id="coins">100</span> монет</div>
+
+<div class="panel arena">
+<div class="chest">🎁</div>
+<h2>Таинственный дроп</h2>
+<div class="sub">Попробуй получить редкого персонажа!</div>
+<button id="drop">🎲 ОТКРЫТЬ ДРОП — 25 🪙</button>
+<div id="result" style="margin-top:15px;font-weight:bold"></div>
+</div>
+
+<div class="panel">
+<h2>📦 Моя коллекция</h2>
+<div id="collection"></div>
+</div>
+
+<div class="panel">
+<h2>🎁 Ежедневная награда</h2>
+<p class="small">Забирай 50 монет раз в день.</p>
+<button id="daily">ЗАБРАТЬ +50 🪙</button>
+</div>
+
+<div class="notice">Brain Drop • Игровой прототип</div>
+
+<script>
+const tg=window.Telegram?.WebApp;
+tg?.ready();
+tg?.expand();
+
+let data;
+try{
+ data=JSON.parse(localStorage.getItem("brainDropSave"))||{};
+}catch(e){data={};}
+data.coins=Number.isFinite(data.coins)?data.coins:100;
+data.collection=data.collection||{};
+data.lastDaily=data.lastDaily||"";
+
+const characters=[
+ {name:"Капучино-ниндзя",emoji:"🥷",chance:40,rarity:"Обычный"},
+ {name:"Банан-диджей",emoji:"🍌",chance:30,rarity:"Редкий"},
+ {name:"Космо-кот",emoji:"🐱",chance:20,rarity:"Эпический"},
+ {name:"Король-мем",emoji:"👑",chance:9,rarity:"Легендарный"},
+ {name:"ДРАГОН БРЕЙН",emoji:"🐉",chance:1,rarity:"Мифический"}
+];
+
+function save(){
+ localStorage.setItem("brainDropSave",JSON.stringify(data));
+ render();
+}
+function render(){
+ document.getElementById("coins").textContent=data.coins;
+ const list=document.getElementById("collection");
+ list.innerHTML="";
+ let found=0;
+ characters.forEach(c=>{
+  const count=data.collection[c.name]||0;
+  if(count>0)found++;
+  const div=document.createElement("div");
+  div.className="item";
+  const left=document.createElement("span");
+  left.textContent=c.emoji+" "+c.name;
+  const right=document.createElement("span");
+  right.textContent=count+" шт.";
+  div.append(left,right);
+  list.appendChild(div);
+ });
+ if(!found)list.innerHTML='<p class="small">Пока пусто. Открой свой первый дроп!</p>';
+ const today=new Date().toDateString();
+ document.getElementById("daily").disabled=data.lastDaily===today;
+ document.getElementById("daily").textContent=data.lastDaily===today?"УЖЕ ПОЛУЧЕНО ✓":"ЗАБРАТЬ +50 🪙";
+}
+document.getElementById("drop").onclick=()=>{
+ if(data.coins<25){
+  document.getElementById("result").textContent="Не хватает монет!";
+  return;
+ }
+ data.coins-=25;
+
+let n=Math.random()*100;
+ let total=0;
+ let chosen=characters[0];
+ for(const c of characters){
+  total+=c.chance;
+  if(n<total){chosen=c;break;}
+ }
+ data.collection[chosen.name]=(data.collection[chosen.name]||0)+1;
+ document.getElementById("result").textContent=chosen.emoji+" "+chosen.name+" — "+chosen.rarity+"!";
+ save();
+};
+document.getElementById("daily").onclick=()=>{
+ const today=new Date().toDateString();
+ if(data.lastDaily===today)return;
+ data.coins+=50;
+ data.lastDaily=today;
+ save();
+};
+render();
+</script>
+</body>
+</html>
